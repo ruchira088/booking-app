@@ -1,0 +1,18 @@
+{
+  "name": "booking-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "node ./test.js",
+    "start": "node ."
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "multer": "^1.2.0",
+    "pg": "^6.1.0"
+  }
+}
