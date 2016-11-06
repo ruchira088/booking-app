@@ -8,7 +8,8 @@ const {
     addUser,
     verifyUserTable,
     getUser,
-    getUsernameFromUserKey
+    getUsernameFromUserKey,
+    logoutUser
 } = require("./database/userDetails")
 const constants = require("./constants")
 
@@ -64,6 +65,14 @@ app.use((request, response, next) => {
     } else {
         response.status(400).json({error: INCLUDE_USER_API_KEY})
     }
+})
+
+app.get("/logout", (request, response) => {
+    const {username} = request
+    const userApiKey = request.get(USER_API_KEY)
+
+    logoutUser(userApiKey)
+    response.json({result: `${username} was logged out.`})
 })
 
 verifyUserTable().then(() => {

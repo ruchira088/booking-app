@@ -65,11 +65,14 @@ const addUser = ({firstName, lastName, username, password}) =>
         )
     )
 
+const logoutUser = userApiKey => loginTokens.removeUser(userApiKey)
+
 const getUsernameFromUserKey = userKey => loginTokens.getUser(userKey)
 
 module.exports = {
     getUser,
     addUser,
     getUsernameFromUserKey,
+    logoutUser,
     verifyUserTable
 }
