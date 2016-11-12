@@ -1,5 +1,21 @@
-const {doTableExist, executeQuery} = require("./common")
+const Sequelize = require("sequelize")
 const {generateRandomString} = require("../utils")
+const {
+    DB_USERNAME,
+    DB_PASSWORD,
+    DB_NAME,
+    DB_HOST,
+    DB_DIALECT,
+    DB_PORT
+} = require("./config")
+
+const sanitizeUser = user => {
+    const clonedUser = Object.assign({}, user)
+    delete clonedUser.password
+    delete clonedUser.id
+
+    return clonedUser
+}
 
 const loginTokens = (() => {
     const tokenMap = new Map()
@@ -22,48 +38,64 @@ const loginTokens = (() => {
     }
 })()
 
-const verifyUserTable = () =>
-    (
-        doTableExist("user_details")
-            .then(exists => {
-                if (!exists) {
-                    console.log("Creating user_details TABLE.")
+const sequelize = new Sequelize(DB_NAME, DB_USERNAME, DB_PASSWORD, {
+    host: DB_HOST,
+    port: DB_PORT,
+    dialect: DB_DIALECT
+})
 
-                    const query = `CREATE TABLE user_details ( 
-					firstName VARCHAR(255), 
-					lastName VARCHAR(255), 
-					username VARCHAR(255), 
-					password VARCHAR(255)
-				);`
+const User = sequelize.define("user", {
+    firstName: {
+        type: Sequelize.STRING
+    },
+    lastName: {
+        type: Sequelize.STRING
+    },
+    username: {
+        type: Sequelize.STRING
+    },
+    password: {
+        type: Sequelize.STRING
+    }
+})
 
-                    return executeQuery(query)
-                }
+const verifyDatabaseTable = () =>
+(
+    sequelize.authenticate()
+        .then(() => {
+            console.log("Successfully connected to the database.")
 
-                console.log("userdetails TABLE already exists.")
-                return exists
-            })
-    )
+            return User.sync()
+        })
+        .catch(err => {
+            console.error(`Unable to connect to the database: ${err}`)
+            return Promise.reject(err)
+        })
+)
 
 const getUser = ({username, password}) =>
-    (
-        executeQuery("SELECT * FROM user_details WHERE username=$1 AND password=$2",
-            [username, password])
-            .then(({rows}) => {
-                const [user] = rows
-                const token = loginTokens.addUser(username)
-                return Object.assign({}, user, {token})
-            })
-    )
+(
+    User.findOne({
+        where: {
+            username,
+            password
+        }
+    })
+        .then(({dataValues: user}) =>
+            sanitizeUser(Object.assign(user, {token: loginTokens.addUser(username)}))
+        )
+)
 
 const addUser = ({firstName, lastName, username, password}) =>
-    (
-        executeQuery(
-            "INSERT INTO user_details VALUES ($1, $2, $3, $4);",
-            [firstName, lastName, username, password]
-        ).then(result =>
-            loginTokens.addUser(username)
-        )
-    )
+(
+    User.create({
+        firstName, lastName, username, password
+    })
+    .then(() => {
+        console.log(`Created user with username: ${username}`)
+        return loginTokens.addUser(username)
+    })
+)
 
 const logoutUser = userApiKey => loginTokens.removeUser(userApiKey)
 
@@ -74,5 +106,5 @@ module.exports = {
     addUser,
     getUsernameFromUserKey,
     logoutUser,
-    verifyUserTable
+    verifyDatabaseTable
 }
