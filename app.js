@@ -49,7 +49,7 @@ app.post("/login", (request, response) => {
             response.json(result)
         })
         .catch(() => {
-            response.json({error: INVALID_CREDENTIALS})
+            response.status(401).json({error: INVALID_CREDENTIALS})
         })
 })
 
