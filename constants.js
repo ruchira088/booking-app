@@ -4,6 +4,7 @@ module.exports = {
     },
     messages: {
         INCLUDE_USER_API_KEY: "User API key is NOT present in the request.",
+        INVALID_CREDENTIALS: "Invalid credentials.",
         INVALID_USER_API_KEY: "The user API key is NOT valid."
     }
 }

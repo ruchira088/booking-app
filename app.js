@@ -3,23 +3,23 @@ const bodyParser = require("body-parser")
 const multer = require("multer")
 const pg = require("pg")
 const http = require("http")
+const PORT = 8010
 
 const {
     addUser,
-    verifyUserTable,
+    verifyDatabaseTable,
     getUser,
     getUsernameFromUserKey,
     logoutUser
 } = require("./database/userDetails")
-const constants = require("./constants")
 
+const constants = require("./constants")
 const {USER_API_KEY} = constants.keys
 const {
     INCLUDE_USER_API_KEY,
+    INVALID_CREDENTIALS,
     INVALID_USER_API_KEY
 } = constants.messages
-
-const PORT = 8010
 
 const app = express()
 
@@ -48,6 +48,9 @@ app.post("/login", (request, response) => {
         .then(result => {
             response.json(result)
         })
+        .catch(() => {
+            response.json({error: INVALID_CREDENTIALS})
+        })
 })
 
 app.use((request, response, next) => {
@@ -75,7 +78,7 @@ app.get("/logout", (request, response) => {
     response.json({result: `${username} was logged out.`})
 })
 
-verifyUserTable().then(() => {
+verifyDatabaseTable().then(() => {
     http.createServer(app)
         .listen(PORT, () => {
             console.log(`Server is listening on port: ${PORT}`)
