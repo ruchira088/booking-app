@@ -1,12 +1,14 @@
 const Sequelize = require("sequelize")
-const {generateRandomString} = require("../utils")
+const {generateRandomString, delay} = require("../utils")
 const {
     DB_USERNAME,
     DB_PASSWORD,
     DB_NAME,
     DB_HOST,
     DB_DIALECT,
-    DB_PORT
+    DB_PORT,
+    RECONNECTION_ATTEMPTS,
+    RECONNECTION_DELAYS
 } = require("./config")
 
 const sanitizeUser = user => {
@@ -59,17 +61,23 @@ const User = sequelize.define("user", {
     }
 })
 
-const verifyDatabaseTable = () =>
+const verifyDatabaseTable = (attempts = RECONNECTION_ATTEMPTS) =>
 (
     sequelize.authenticate()
         .then(() => {
             console.log("Successfully connected to the database.")
-
             return User.sync()
         })
         .catch(err => {
-            console.error(`Unable to connect to the database: ${err}`)
-            return Promise.reject(err)
+            console.warn(`Unable to connect to the database: ${err}`)
+
+            if(attempts >= 0) {
+                console.log(`Attempting to connect to the database again. ${attempts} connection attempts remaining...`)
+                return delay(() => verifyDatabaseTable(attempts - 1), RECONNECTION_DELAYS)
+            } else {
+                console.error("Database NOT available.")
+                return Promise.reject(err)
+            }
         })
 )
 
